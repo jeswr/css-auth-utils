@@ -26,7 +26,7 @@ export function getSecret(login: ILoginDetails): Promise<ISecretData> {
   return fetch(`${login.url}idp/credentials/`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ podName: login.podName, email: login.email, password: login.password }),
+    body: JSON.stringify({ name: login.podName, email: login.email, password: login.password }),
   }).then((res) => res.json());
 }
 
