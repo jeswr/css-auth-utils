@@ -1,9 +1,12 @@
 import type { KeyPair } from '@inrupt/solid-client-authn-core';
+import { Session } from '@inrupt/solid-client-authn-node';
+import express from 'express';
 import {
   buildAuthenticatedFetch, createDpopHeader,
   generateDpopKeyPair,
 } from '@inrupt/solid-client-authn-core';
 import puppeteer from 'puppeteer';
+import getPort from 'get-port';
 
 export interface ITokenData {
   accessToken: string;
@@ -20,6 +23,12 @@ export interface ILoginDetails {
 export interface ISecretData {
   id: string;
   secret: string;
+}
+
+export interface IBrowserLoginData {
+  oidcIssuer: string;
+  email: string;
+  password: string;
 }
 
 // From https://communitysolidserver.github.io/CommunitySolidServer/5.x/usage/client-credentials/
@@ -89,4 +98,43 @@ export function cssRedirectFactory(email: string, password: string) {
     await page.close();
     await browser.close();
   };
+}
+
+export async function getSessionFromBrowserLogin(options: IBrowserLoginData): Promise<Session> {
+  const session = new Session();
+  const port = await getPort();
+
+  // Create an express app to handle incoming redirects
+  const app = express();
+  app.get('/', async (req, res) => {
+    if (req.query.code || req.query.state) {
+      await session.handleIncomingRedirect(`${req.protocol}://${req.get('host')}${req.originalUrl}`);
+      return res.redirect('/');
+    }
+
+    return res.send();
+  });
+
+  // Start the express server
+  const server = app.listen(port);
+
+  // Start the login
+  await session.login({
+    oidcIssuer: options.oidcIssuer,
+    redirectUrl: `http://localhost:${port}/`,
+    handleRedirect: cssRedirectFactory(options.email, options.password),
+  });
+
+  // Wait for the login to complete
+  await new Promise<void>((res) => { session.onLogin(res); });
+
+  // Close the server
+  await new Promise<void>((res, rej) => {
+    server.close((err) => {
+      if (err) rej(err);
+      else res();
+    });
+  });
+
+  return session;
 }

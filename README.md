@@ -21,10 +21,22 @@ In some testing use cases we wish to follow the browser login flow, but mock the
 import { cssRedirectFactory } from '@jeswr/css-auth-utils';
 
 await session.login({
-    oidcIssuer: 'http://localhost:3000/',
-    redirectUrl: 'http://localhost:3001/',
-    handleRedirect: cssRedirectFactory('hello@example.com', 'abc123')
-  });
+  oidcIssuer: 'http://localhost:3000/',
+  redirectUrl: 'http://localhost:3001/',
+  handleRedirect: cssRedirectFactory('hello@example.com', 'abc123')
+});
+```
+
+If you just wish to get the session, and don't need to control the server for redirect URLs then you can do:
+
+```ts
+import { getSessionFromBrowserLogin } from '@jeswr/css-auth-utils';
+
+const session = await getSessionFromBrowserLogin({
+  email: 'hello@example.com',
+  password: 'abc123',
+  oidcIssuer: 'http://localhost:3000/',
+});
 ```
 
 ## License
