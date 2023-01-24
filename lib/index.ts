@@ -6,7 +6,7 @@ import {
   generateDpopKeyPair,
 } from '@inrupt/solid-client-authn-core';
 import puppeteer from 'puppeteer';
-import getPort from 'get-port';
+import { getPort } from 'get-port-please';
 
 export interface ITokenData {
   accessToken: string;
