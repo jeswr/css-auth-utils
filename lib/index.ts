@@ -3,6 +3,7 @@ import {
   buildAuthenticatedFetch, createDpopHeader,
   generateDpopKeyPair,
 } from '@inrupt/solid-client-authn-core';
+import puppeteer from 'puppeteer';
 
 export interface ITokenData {
   accessToken: string;
@@ -61,4 +62,31 @@ Promise<typeof globalThis.fetch> {
 
   // Build authenticated fetch
   return buildAuthenticatedFetch(<any>fetch, token.accessToken, { dpopKey: token.dpopKey });
+}
+
+export function cssRedirectFactory(email: string, password: string) {
+  return async function handleRedirect(url: string) {
+    // Visit the redirect url
+    const browser = await puppeteer.launch();
+    const page = await browser.newPage();
+    await page.goto(url);
+
+    // Fill out the username / password form
+    await page.type('input[id=email]', email);
+    await page.type('input[name=password]', password);
+    await page.click('button[type=submit]');
+
+    // Navigate to the authorise page
+    await page.waitForNavigation();
+
+    // Click the authorise button
+    await page.click('button[type=submit]');
+
+    // Navigate to the authorise page
+    await page.waitForNavigation();
+
+    // Close the page and browser
+    await page.close();
+    await browser.close();
+  };
 }
