@@ -17,6 +17,8 @@ const fetch = getAuthenticatedFetch({
 
 In some testing use cases we wish to follow the browser login flow, but mock the user interaction with the browser. This can be achieved using the `cssRedirectFactory` which fills in the email and password and completes the user flow with the CSS using puppeteer.
 
+Generally this should only be used when testing browser login flows in e2e tests.
+
 ```ts
 import { cssRedirectFactory } from '@jeswr/css-auth-utils';
 
