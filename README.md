@@ -47,7 +47,7 @@ const session = await getSessionFromBrowserLogin({
 import { essRedirectFactory } from '@jeswr/css-auth-utils';
 
 await session.login({
-  oidcIssuer: 'https://id.inrupt.com/',
+  oidcIssuer: 'https://login.inrupt.com/',
   redirectUrl: 'http://localhost:3001/',
   handleRedirect: cssRedirectFactory('myUsername', 'abc123')
 });
@@ -58,7 +58,7 @@ await session.login({
 import { getSessionFromBrowserLogin, essRedirectFactory } from '@jeswr/css-auth-utils';
 
 const session = await getSessionFromBrowserLogin({
-  oidcIssuer: 'https://id.inrupt.com/',
+  oidcIssuer: 'https://login.inrupt.com/',
   email: 'myUsername',
   password: 'abc123',
   redirectFactory: essRedirectFactory
