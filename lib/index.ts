@@ -1,12 +1,12 @@
 import type { KeyPair } from '@inrupt/solid-client-authn-core';
-import { Session } from '@inrupt/solid-client-authn-node';
-import express from 'express';
 import {
   buildAuthenticatedFetch, createDpopHeader,
   generateDpopKeyPair,
 } from '@inrupt/solid-client-authn-core';
-import puppeteer from 'puppeteer';
+import { Session } from '@inrupt/solid-client-authn-node';
+import express from 'express';
 import { getPort } from 'get-port-please';
+import puppeteer from 'puppeteer';
 
 export interface ITokenData {
   accessToken: string;
@@ -62,7 +62,7 @@ export async function refreshToken({ id, secret }: ISecretData, url: string): Pr
 }
 
 export async function getAuthenticatedFetch(login: ILoginDetails):
-Promise<typeof globalThis.fetch> {
+  Promise<typeof globalThis.fetch> {
   // Generate secret
   const secret = await getSecret(login);
 
@@ -85,14 +85,20 @@ export function cssRedirectFactory(email: string, password: string) {
     await page.type('input[name=password]', password);
     await page.click('button[type=submit]');
 
-    // Navigate to the authorise page
+    // Submit and navigate to the authorise page
     await page.waitForNavigation();
 
-    // Click the authorise button
-    await page.click('button[type=submit]');
-
-    // Navigate to the authorise page
-    await page.waitForNavigation();
+    for (let i = 0; i < 5; i += 1) {
+      try {
+        // eslint-disable-next-line no-await-in-loop
+        await page.click('button[type=submit]');
+        // eslint-disable-next-line no-await-in-loop
+        await page.waitForNavigation({ timeout: 10 });
+        break;
+      } catch {
+        // Ignore error
+      }
+    }
 
     // Close the page and browser
     await page.close();
