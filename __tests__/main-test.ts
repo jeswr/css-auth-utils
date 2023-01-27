@@ -1,7 +1,9 @@
 import { createApp } from '@jeswr/css-init-utils';
 import { App } from '@solid/community-server';
 import path from 'path';
-import { getSessionFromBrowserLogin, getAuthenticatedFetch } from '../lib';
+import {
+  getSessionFromBrowserLogin, getAuthenticatedFetch, cssRedirectFactory,
+} from '../lib';
 
 describe('Testing against a CSS instance', () => {
   let app: App;
@@ -24,6 +26,21 @@ describe('Testing against a CSS instance', () => {
       email: 'hello@example.com',
       password: 'abc123',
       oidcIssuer: 'http://localhost:3000/',
+    });
+
+    expect(session.info).toMatchObject({
+      webId: 'http://localhost:3000/example/profile/card#me',
+    });
+
+    await session.logout();
+  });
+
+  it('Can retrieve a session using browser flow with explicit redirect factory', async () => {
+    const session = await getSessionFromBrowserLogin({
+      email: 'hello@example.com',
+      password: 'abc123',
+      oidcIssuer: 'http://localhost:3000/',
+      redirectFactory: cssRedirectFactory,
     });
 
     expect(session.info).toMatchObject({
