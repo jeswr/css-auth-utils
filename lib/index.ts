@@ -29,6 +29,8 @@ export interface IBrowserLoginData {
   oidcIssuer: string;
   email: string;
   password: string;
+  // eslint-disable-next-line no-unused-vars
+  redirectFactory?(email: string, password: string): (url: string) => Promise<void>;
 }
 
 // From https://communitysolidserver.github.io/CommunitySolidServer/5.x/usage/client-credentials/
@@ -73,7 +75,15 @@ export async function getAuthenticatedFetch(login: ILoginDetails):
   return buildAuthenticatedFetch(<any>fetch, token.accessToken, { dpopKey: token.dpopKey });
 }
 
-export function cssRedirectFactory(email: string, password: string) {
+export interface FlowParams {
+  email: string;
+  password: string;
+  submit: string;
+  // If not define do the same as submit
+  approve?: string;
+}
+
+export function generalRedirectFactory(email: string, password: string, params: FlowParams) {
   return async function handleRedirect(url: string) {
     // Visit the redirect url
     const browser = await puppeteer.launch();
@@ -81,9 +91,9 @@ export function cssRedirectFactory(email: string, password: string) {
     await page.goto(url);
 
     // Fill out the username / password form
-    await page.type('input[id=email]', email);
-    await page.type('input[name=password]', password);
-    await page.click('button[type=submit]');
+    await page.type(params.email, email);
+    await page.type(params.password, password);
+    await page.click(params.submit);
 
     // Submit and navigate to the authorise page
     await page.waitForNavigation();
@@ -91,7 +101,7 @@ export function cssRedirectFactory(email: string, password: string) {
     for (let i = 0; i < 5; i += 1) {
       try {
         // eslint-disable-next-line no-await-in-loop
-        await page.click('button[type=submit]');
+        await page.click(params.approve ?? params.submit);
         // eslint-disable-next-line no-await-in-loop
         await page.waitForNavigation({ timeout: 10 });
         break;
@@ -104,6 +114,23 @@ export function cssRedirectFactory(email: string, password: string) {
     await page.close();
     await browser.close();
   };
+}
+
+export function cssRedirectFactory(email: string, password: string) {
+  return generalRedirectFactory(email, password, {
+    email: 'input[id=email]',
+    password: 'input[name=password]',
+    submit: 'button[type=submit]',
+  });
+}
+
+export function essRedirectFactory(email: string, password: string) {
+  return generalRedirectFactory(email, password, {
+    email: 'input[id=signInFormUsername]',
+    password: 'input[id=signInFormPassword]',
+    submit: 'input[type=Submit]',
+    approve: 'button[form=approve]',
+  });
 }
 
 export async function getSessionFromBrowserLogin(options: IBrowserLoginData): Promise<Session> {
@@ -128,7 +155,10 @@ export async function getSessionFromBrowserLogin(options: IBrowserLoginData): Pr
   await session.login({
     oidcIssuer: options.oidcIssuer,
     redirectUrl: `http://localhost:${port}/`,
-    handleRedirect: cssRedirectFactory(options.email, options.password),
+    handleRedirect: (options.redirectFactory ?? cssRedirectFactory)(
+      options.email,
+      options.password,
+    ),
   });
 
   // Wait for the login to complete

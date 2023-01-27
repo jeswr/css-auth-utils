@@ -41,6 +41,30 @@ const session = await getSessionFromBrowserLogin({
 });
 ```
 
+## [ESS] Logging in using the browser flow
+
+```ts
+import { essRedirectFactory } from '@jeswr/css-auth-utils';
+
+await session.login({
+  oidcIssuer: 'https://id.inrupt.com/',
+  redirectUrl: 'http://localhost:3001/',
+  handleRedirect: cssRedirectFactory('myUsername', 'abc123')
+});
+```
+
+
+```ts
+import { getSessionFromBrowserLogin, essRedirectFactory } from '@jeswr/css-auth-utils';
+
+const session = await getSessionFromBrowserLogin({
+  oidcIssuer: 'https://id.inrupt.com/',
+  email: 'myUsername',
+  password: 'abc123',
+  redirectFactory: essRedirectFactory
+});
+```
+
 ## License
 ©2023–present
 [Jesse Wright](https://github.com/jeswr),
