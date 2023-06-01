@@ -86,7 +86,7 @@ export interface FlowParams {
 export function generalRedirectFactory(email: string, password: string, params: FlowParams) {
   return async function handleRedirect(url: string) {
     // Visit the redirect url
-    const browser = await puppeteer.launch();
+    const browser = await puppeteer.launch({ headless: false });
     const page = await browser.newPage();
     await page.goto(url);
 
@@ -95,8 +95,12 @@ export function generalRedirectFactory(email: string, password: string, params: 
     await page.type(params.password, password);
     await page.click(params.submit);
 
+    console.log('waiting for navigation')
+
     // Submit and navigate to the authorise page
     await page.waitForNavigation();
+
+    console.log('navigation completed')
 
     for (let i = 0; i < 5; i += 1) {
       try {
