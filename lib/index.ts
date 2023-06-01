@@ -33,7 +33,7 @@ export interface IBrowserLoginData {
   redirectFactory?(email: string, password: string): (url: string) => Promise<void>;
 }
 
-// From https://communitysolidserver.github.io/CommunitySolidServer/5.x/usage/client-credentials/
+// From https://communitysolidserver.github.io/CommunitySolidServer/6.x/usage/client-credentials/
 export function getSecret(login: ILoginDetails): Promise<ISecretData> {
   return fetch(`${login.url}idp/credentials/`, {
     method: 'POST',
@@ -42,7 +42,7 @@ export function getSecret(login: ILoginDetails): Promise<ISecretData> {
   }).then((res) => res.json());
 }
 
-// From https://communitysolidserver.github.io/CommunitySolidServer/5.x/usage/client-credentials/
+// From https://communitysolidserver.github.io/CommunitySolidServer/6.x/usage/client-credentials/
 export async function refreshToken({ id, secret }: ISecretData, url: string): Promise<ITokenData> {
   const dpopKey = await generateDpopKeyPair();
   const authString = `${encodeURIComponent(id)}:${encodeURIComponent(secret)}`;
@@ -86,9 +86,11 @@ export interface FlowParams {
 export function generalRedirectFactory(email: string, password: string, params: FlowParams) {
   return async function handleRedirect(url: string) {
     // Visit the redirect url
-    const browser = await puppeteer.launch();
+    const browser = await puppeteer.launch({ headless: false });
     const page = await browser.newPage();
     await page.goto(url);
+
+    const navigationAwaiter = page.waitForNavigation();
 
     // Fill out the username / password form
     await page.type(params.email, email);
@@ -96,7 +98,7 @@ export function generalRedirectFactory(email: string, password: string, params: 
     await page.click(params.submit);
 
     // Submit and navigate to the authorise page
-    await page.waitForNavigation();
+    await navigationAwaiter;
 
     for (let i = 0; i < 5; i += 1) {
       try {
@@ -114,6 +116,15 @@ export function generalRedirectFactory(email: string, password: string, params: 
     await page.close();
     await browser.close();
   };
+}
+
+export function nssRedirectFactory(email: string, password: string) {
+  return generalRedirectFactory(email, password, {
+    email: 'input[id=username]',
+    password: 'input[id=password]',
+    submit: 'button[type=submit]',
+    approve: 'button[type=submit]',
+  });
 }
 
 export function cssRedirectFactory(email: string, password: string) {
